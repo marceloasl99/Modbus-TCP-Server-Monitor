@@ -6,6 +6,8 @@ A Windows PowerShell Modbus TCP server simulator with a responsive real-time GUI
 
 > Windows PowerShell Modbus TCP server with real-time traffic monitoring, active-client statistics, RX/TX packet counters, address/value change tracking, persistent values, and TXT session logs.
 
+<img width="1920" height="1147" alt="photo_2026-07-13_09-56-48" src="https://github.com/user-attachments/assets/9aaaad4a-09dd-402a-80c2-02a939bbbb63" />
+
 ## Overview
 
 **Modbus TCP Server Monitor** is a standalone PowerShell application for Windows. It starts a Modbus TCP server and displays live operational information in a graphical interface without requiring an external PowerShell module or third-party library.
