@@ -2,8 +2,6 @@
 
 A Windows PowerShell Modbus TCP server simulator with a responsive real-time GUI for monitoring client connections, Modbus traffic, packet counters, register and coil writes, persistent values, and session logs.
 
-## GitHub repository description
-
 > Windows PowerShell Modbus TCP server with real-time traffic monitoring, active-client statistics, RX/TX packet counters, address/value change tracking, persistent values, and TXT session logs.
 
 <img width="1920" height="1147" alt="photo_2026-07-13_09-56-48" src="https://github.com/user-attachments/assets/9aaaad4a-09dd-402a-80c2-02a939bbbb63" />
