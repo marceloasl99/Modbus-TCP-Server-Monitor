@@ -13,6 +13,10 @@ modbus_values.txt.tmp
 .vscode/
 .idea/
 
+# Build output
+build/
+*.exe
+
 # Windows metadata
 Thumbs.db
 Desktop.ini
