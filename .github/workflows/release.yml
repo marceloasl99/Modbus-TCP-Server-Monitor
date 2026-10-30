@@ -24,7 +24,6 @@ jobs:
       - name: Install PS2EXE (pinned)
         shell: pwsh
         run: |
-          Install-PackageProvider -Name NuGet -Force -Scope CurrentUser | Out-Null
           Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
           Install-Module -Name ps2exe -RequiredVersion 1.0.18 -Scope CurrentUser -Force
 
