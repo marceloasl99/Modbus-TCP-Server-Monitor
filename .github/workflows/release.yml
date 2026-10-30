@@ -4,39 +4,89 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Existing tag to build and attach (for example v1.1.0)'
+        required: true
 
 permissions:
   contents: write
 
 jobs:
-  release:
-    runs-on: ubuntu-latest
+  build-exe:
+    runs-on: windows-latest
+    env:
+      TAG: ${{ github.event.inputs.tag || github.ref_name }}
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install PS2EXE (pinned)
+        shell: pwsh
+        run: |
+          Install-PackageProvider -Name NuGet -Force -Scope CurrentUser | Out-Null
+          Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
+          Install-Module -Name ps2exe -RequiredVersion 1.0.18 -Scope CurrentUser -Force
+
+      - name: Compile GUI executable
+        shell: pwsh
+        run: |
+          Import-Module ps2exe
+          $version = $env:TAG -replace '^v', ''
+          New-Item -ItemType Directory -Force -Path dist | Out-Null
+          Invoke-PS2EXE -InputFile ModbusTcpServerMonitor.ps1 -OutputFile dist/ModbusTcpServerMonitor.exe `
+            -noConsole -title 'Modbus TCP Server Monitor' -product 'Modbus TCP Server Monitor' `
+            -description 'Modbus TCP server simulator with real-time GUI' -company 'marceloasl99' `
+            -version $version
+
+      - name: Compute checksums
+        shell: bash
+        run: |
+          cd dist
+          sha256sum ModbusTcpServerMonitor.exe > ModbusTcpServerMonitor.exe.sha256
+          cp ../ModbusTcpServerMonitor.ps1 .
+          sha256sum ModbusTcpServerMonitor.ps1 > ModbusTcpServerMonitor.ps1.sha256
+          cat *.sha256
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: modbus-dist
+          path: dist/
+          if-no-files-found: error
+
+  publish:
+    needs: build-exe
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ github.event.inputs.tag || github.ref_name }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: modbus-dist
+          path: dist
+
       - name: Extract changelog section for this tag
         run: |
-          version="${GITHUB_REF_NAME#v}"
+          version="${TAG#v}"
           awk -v ver="$version" '
             $0 ~ "^## " ver { flag=1; next }
             /^## / && flag { flag=0 }
             flag { print }
           ' CHANGELOG.md > release-notes.md
           if [ ! -s release-notes.md ]; then
-            echo "Release ${GITHUB_REF_NAME}" > release-notes.md
+            echo "Release ${TAG}" > release-notes.md
           fi
-          echo "----- release notes -----"
-          cat release-notes.md
 
-      - name: Compute checksum
-        run: sha256sum ModbusTcpServerMonitor.ps1 > ModbusTcpServerMonitor.ps1.sha256
-
-      - name: Create GitHub release
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - name: Create release, or attach files to the existing one
         run: |
-          gh release create "${GITHUB_REF_NAME}" \
-            --title "${GITHUB_REF_NAME}" \
-            --notes-file release-notes.md \
-            ModbusTcpServerMonitor.ps1 \
-            ModbusTcpServerMonitor.ps1.sha256
+          assets="dist/ModbusTcpServerMonitor.ps1 dist/ModbusTcpServerMonitor.ps1.sha256 dist/ModbusTcpServerMonitor.exe dist/ModbusTcpServerMonitor.exe.sha256"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" $assets --clobber
+          else
+            gh release create "$TAG" --title "$TAG" --notes-file release-notes.md $assets
+          fi
