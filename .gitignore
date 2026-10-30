@@ -1,0 +1,18 @@
+# Runtime session logs
+modbus_session_*.txt
+modbus_changes_*.txt
+
+# Persistent runtime values
+modbus_values.txt
+modbus_values.txt.tmp
+
+# PowerShell and editor temporary files
+*.tmp
+*.bak
+*.log
+.vscode/
+.idea/
+
+# Windows metadata
+Thumbs.db
+Desktop.ini
